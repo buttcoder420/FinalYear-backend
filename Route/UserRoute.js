@@ -8,6 +8,8 @@ const {
   deleteUser,
   requireSign,
   IsAdmin,
+  updateUserProfileOrPassword,
+  getLoggedInUser,
 } = require("../Controller/UserController");
 
 const router = express.Router();
@@ -20,8 +22,11 @@ router.post("/login", loginUser);
 router.post("/verify-email", verifyEmail);
 
 // Admin/User management routes
-router.get("/all", requireSign, IsAdmin, getAllUsers); // get all users (admin)
-router.put("/update/:id", requireSign, IsAdmin, updateUser); // update user by ID
-router.delete("/delete/:id", requireSign, IsAdmin, deleteUser); // delete user by ID
+router.get("/all", requireSign, IsAdmin, getAllUsers);
+router.put("/update/:id", requireSign, IsAdmin, updateUser);
+router.delete("/delete/:id", requireSign, IsAdmin, deleteUser);
+
+router.get("/me", requireSign, getLoggedInUser);
+router.put("/update-profile", requireSign, updateUserProfileOrPassword);
 
 module.exports = router;
