@@ -368,6 +368,78 @@ const updateUser = async (req, res) => {
   }
 };
 
+const getLoggedInUser = async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.auth._id).select("-password");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User profile fetched successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Error in getLoggedInUser:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+const updateUserProfileOrPassword = async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.auth._id);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const { oldPassword, newPassword, ...profileFields } = req.body;
+
+    // Password change logic
+    if (oldPassword && newPassword) {
+      const isMatch = await ComparePassword(oldPassword, user.password);
+      if (!isMatch) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Old password is incorrect" });
+      }
+
+      const hashed = await HashPassword(newPassword, 10);
+      user.password = hashed;
+    }
+
+    // Profile update logic
+    Object.keys(profileFields).forEach((key) => {
+      user[key] = profileFields[key];
+    });
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        userName: user.userName,
+
+        phoneNumber: user.phoneNumber,
+        whatsappNumber: user.whatsappNumber,
+        address: user.address,
+      },
+    });
+  } catch (error) {
+    console.error("Error in updateUserProfileOrPassword:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 module.exports = {
   requireSign,
   IsAdmin,
@@ -377,4 +449,6 @@ module.exports = {
   deleteUser,
   updateUser,
   getAllUsers,
+  getLoggedInUser,
+  updateUserProfileOrPassword,
 };
